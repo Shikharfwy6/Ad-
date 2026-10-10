@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AK URL Shortener</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 💡 YAHAN APNA ADMONTAG / ADSTERRA KA SCRIPT PASTE KAR SAKTE HAIN -->
+</head>
+<body class="bg-slate-950 text-white flex flex-col items-center justify-between min-h-screen p-4 font-sans">
+
+    <!-- Top Ad Space -->
+    <div class="w-full max-w-xl bg-slate-900 p-4 rounded-xl border border-slate-800 text-center text-slate-500 my-2">
+        <p class="text-xs">Advertisement (AdMonTag / Banner Top)</p>
+        <!-- Apni Ad script yahan lagayein -->
+    </div>
+
+    <!-- Dynamic App Container -->
+    <div id="app" class="w-full flex flex-col items-center justify-center my-auto">
+        <!-- Content will be rendered dynamically via JavaScript -->
+    </div>
+
+    <!-- Bottom Ad Space -->
+    <div class="w-full max-w-xl bg-slate-900 p-4 rounded-xl border border-slate-800 text-center text-slate-500 my-2">
+        <p class="text-xs">Advertisement (AdMonTag / Banner Bottom)</p>
+        <!-- Apni Ad script yahan lagayein -->
+    </div>
+
+    <script>
+        // --- ROUTER & APP LOGIC ---
+        function render() {
+            const hash = window.location.hash; // Format: #token=XYZ&step=1
+            const app = document.getElementById('app');
+
+            if (!hash || !hash.includes('token=')) {
+                // 1. HOME / GENERATOR PAGE
+                app.innerHTML = `
+                    <div class="bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800 w-full max-w-md">
+                        <h1 class="text-2xl font-black text-center mb-6 text-indigo-400">AK URL Shortener</h1>
+                        <form id="shorten-form" class="space-y-4">
+                            <input type="url" id="target-url" placeholder="Paste your long URL here..." required class="w-full p-3 rounded-lg bg-slate-800 border border-slate-700 focus:outline-none focus:border-indigo-500 text-white">
+                            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 py-3 rounded-lg font-bold transition">Shorten Link</button>
+                        </form>
+                    </div>
+                `;
+
+                document.getElementById('shorten-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const url = document.getElementById('target-url').value;
+                    const token = Math.random().toString(36).substring(2, 10);
+                    
+                    // Save in browser localStorage
+                    localStorage.setItem('ak_url_' + token, url);
+
+                    // Redirect to Step 1
+                    window.location.hash = `token=${token}&step=1`;
+                });
+
+            } else {
+                // PARSE HASH
+                const params = new URLSearchParams(hash.replace('#', ''));
+                const token = params.get('token');
+                let step = parseInt(params.get('step')) || 1;
+
+                const originalUrl = localStorage.getItem('ak_url_' + token);
+
+                if (!originalUrl) {
+                    app.innerHTML = `
+                        <div class="bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800 w-full max-w-md text-center">
+                            <h2 class="text-xl font-bold mb-2 text-red-400">Link Expired or Invalid</h2>
+                            <a href="#" class="mt-4 inline-block bg-indigo-600 px-4 py-2 rounded-lg font-semibold">Create New Link</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                if (step > 4) {
+                    // Final Destination Redirect
+                    window.location.href = originalUrl;
+                    return;
+                }
+
+                let nextStep = step + 1;
+                let nextHash = `#token=${token}&step=${nextStep}`;
+
+                // 2. AD / TIMER STEP PAGES (1 to 4)
+                app.innerHTML = `
+                    <div class="bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800 w-full max-w-md text-center">
+                        <h2 class="text-xl font-bold mb-2 text-indigo-400">Processing Link...</h2>
+                        <p class="text-slate-400 text-sm mb-6">Step <span id="step-num">${step}</span> of 4</p>
+
+                        <div id="timer-box" class="mb-6">
+                            <p class="text-lg font-semibold text-yellow-400">Please wait <span id="countdown">7</span> seconds...</p>
+                            <p class="text-xs text-slate-500 mt-1">Scroll down or click ads to support us</p>
+                        </div>
+
+                        <a id="next-btn" href="${nextHash}" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded-lg font-bold transition block shadow-lg">Get Link / Continue</a>
+                    </div>
+                `;
+
+                // Timer Logic
+                let timeLeft = 7;
+                const countdownEl = document.getElementById('countdown');
+                const timerBox = document.getElementById('timer-box');
+                const nextBtn = document.getElementById('next-btn');
+
+                const timer = setInterval(() => {
+                    timeLeft--;
+                    if (countdownEl) countdownEl.innerText = timeLeft;
+                    if (timeLeft <= 0) {
+                        clearInterval(timer);
+                        if (timerBox) timerBox.style.display = 'none';
+                        if (nextBtn) nextBtn.classList.remove('hidden');
+                    }
+                }, 1000);
+            }
+        }
+
+        // Listen to hash changes for smooth client-side navigation
+        window.addEventListener('hashchange', render);
+        window.addEventListener('load', render);
+    </script>
+</body>
+</html>
