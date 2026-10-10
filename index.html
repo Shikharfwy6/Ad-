@@ -43,6 +43,9 @@
     </div>
 
     <script>
+        // Direct Link URL Variable
+        const DIRECT_LINK = "https://uplcm.com/4/11997836";
+
         // --- ROUTER & APP LOGIC ---
         function render() {
             const hash = window.location.hash; // Format: #token=XYZ&step=1
@@ -67,6 +70,8 @@
                     
                     // Save in browser localStorage
                     localStorage.setItem('ak_url_' + token, url);
+                    // Reset click count for new session
+                    localStorage.setItem('continue_clicks', '0');
 
                     // Redirect to Step 1
                     window.location.hash = `token=${token}&step=1`;
@@ -107,10 +112,10 @@
 
                         <div id="timer-box" class="mb-6">
                             <p class="text-lg font-semibold text-yellow-400">Please wait <span id="countdown">7</span> seconds...</p>
-                            <p class="text-xs text-slate-400 mt-2">💡 <a href="https://uplcm.com/4/11997836" target="_blank" class="text-indigo-400 underline font-medium">Click here if timer is slow</a></p>
+                            <p class="text-xs text-slate-400 mt-2">💡 <a href="${DIRECT_LINK}" target="_blank" class="text-indigo-400 underline font-medium">Click here if timer is slow</a></p>
                         </div>
 
-                        <a id="next-btn" href="${nextHash}" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded-lg font-bold transition block shadow-lg">Get Link / Continue</a>
+                        <button id="next-btn" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded-lg font-bold transition block shadow-lg cursor-pointer">Get Link / Continue</button>
                     </div>
                 `;
 
@@ -129,6 +134,27 @@
                         if (nextBtn) nextBtn.classList.remove('hidden');
                     }
                 }, 1000);
+
+                // --- 5 CLICKS DIRECT LINK LOGIC ---
+                if (nextBtn) {
+                    nextBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+
+                        // Get current click count
+                        let clicks = parseInt(localStorage.getItem('continue_clicks') || '0');
+                        clicks++;
+
+                        if (clicks < 6) {
+                            // 1 se 5 click tak: Direct link open karo
+                            localStorage.setItem('continue_clicks', clicks.toString());
+                            window.open(DIRECT_LINK, '_blank');
+                        } else {
+                            // 6th click par: Agle page/step par le jao
+                            localStorage.setItem('continue_clicks', '0'); // Counter reset
+                            window.location.hash = nextHash;
+                        }
+                    });
+                }
             }
         }
 
