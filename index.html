@@ -46,29 +46,25 @@
         // Direct Link URL Variable
         const DIRECT_LINK = "https://uplcm.com/4/11997836";
 
-        // Yahan apna default final destination link daalein jahan user 4 steps ke baad jayega
-        const DEFAULT_FINAL_URL = "https://t.me/Course_give_bot"; 
+        // Telegram Bot ka base URL jise copy box me banana hai
+        const BOT_BASE_URL = "https://t.me/Course_give_bot?start="; 
 
         // --- ROUTER & APP LOGIC ---
         function render() {
             let hash = window.location.hash; // Format: #token=XYZ&step=1 ya #verifyadnabavwji1u198
             const app = document.getElementById('app');
 
-            // Agar hash khali hai ya usme token nahi hai, toh automatic ek naya session bana kar Step 1 par bhej do
+            // Agar hash khali hai, toh random token generate karke Step 1 par bhej do
             if (!hash || hash === '#') {
-                const autoToken = Math.random().toString(36).substring(2, 10);
-                localStorage.setItem('ak_url_' + autoToken, DEFAULT_FINAL_URL);
+                const autoToken = "verifyad" + Math.random().toString(36).substring(2, 10);
                 localStorage.setItem('continue_clicks', '0');
                 window.location.hash = `token=${autoToken}&step=1`;
                 return;
             }
 
-            // Agar Telegram se direct token aaya hai (jaise #verifyadnabavwji1u198)
+            // Agar Telegram se direct random token aaya hai (jaise #verifyadnabavwji1u198)
             if (hash && !hash.includes('token=') && hash.length > 1) {
                 const randomToken = hash.replace('#', '');
-                if (!localStorage.getItem('ak_url_' + randomToken)) {
-                    localStorage.setItem('ak_url_' + randomToken, DEFAULT_FINAL_URL);
-                }
                 localStorage.setItem('continue_clicks', '0');
                 window.location.hash = `token=${randomToken}&step=1`;
                 return;
@@ -76,21 +72,50 @@
 
             // PARSE HASH & STEPS LOGIC
             const params = new URLSearchParams(hash.replace('#', ''));
-            const token = params.get('token');
+            const token = params.get('token') || "verifyad123";
             let step = parseInt(params.get('step')) || 1;
 
-            const originalUrl = localStorage.getItem('ak_url_' + token) || DEFAULT_FINAL_URL;
+            // Final Link generate karo copy box ke liye
+            const finalLinkToCopy = BOT_BASE_URL + token;
 
+            // Step 4 ke baad Completion / Copy Box Screen dikhao
             if (step > 4) {
-                // Final Destination Redirect
-                window.location.href = originalUrl;
+                app.innerHTML = `
+                    <div class="bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800 w-full max-w-md text-center">
+                        <div class="text-emerald-400 text-4xl mb-3">✅</div>
+                        <h2 class="text-2xl font-bold mb-2 text-indigo-400">Verification Complete!</h2>
+                        <p class="text-slate-400 text-sm mb-6">Aapka link taiyar hai. Niche diye gaye box se copy karein:</p>
+
+                        <div class="space-y-4">
+                            <input type="text" id="copy-input" value="${finalLinkToCopy}" readonly class="w-full p-3 rounded-lg bg-slate-800 border border-slate-700 text-emerald-400 font-mono text-sm text-center focus:outline-none">
+                            <button id="copy-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 py-3 rounded-lg font-bold transition shadow-lg">Copy Link</button>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('copy-btn').addEventListener('click', () => {
+                    const copyInput = document.getElementById('copy-input');
+                    copyInput.select();
+                    copyInput.setSelectionRange(0, 99999); // Mobile compatibility ke liye
+                    navigator.clipboard.writeText(copyInput.value);
+
+                    const btn = document.getElementById('copy-btn');
+                    btn.innerText = "Copied! 👍";
+                    btn.classList.remove('bg-indigo-600');
+                    btn.classList.add('bg-emerald-600');
+
+                    setTimeout(() => {
+                        btn.innerText = "Copy Link";
+                        btn.classList.remove('bg-emerald-600');
+                        btn.classList.add('bg-indigo-600');
+                    }, 2000);
+                });
                 return;
             }
 
             let nextStep = step + 1;
-            let nextHash = `#token=${token}&step=${nextStep}`;
 
-            // 2. AD / TIMER STEP PAGES (1 se 4 tak)
+            // AD / TIMER STEP PAGES (1 se 4 tak)
             app.innerHTML = `
                 <div class="bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800 w-full max-w-md text-center">
                     <h2 class="text-xl font-bold mb-2 text-indigo-400">Processing Verification...</h2>
