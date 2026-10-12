@@ -46,119 +46,100 @@
         // Direct Link URL Variable
         const DIRECT_LINK = "https://uplcm.com/4/11997836";
 
+        // Yahan apna default final destination link daalein jahan user 4 steps ke baad jayega
+        const DEFAULT_FINAL_URL = "https://t.me/Course_give_bot"; 
+
         // --- ROUTER & APP LOGIC ---
         function render() {
-            const hash = window.location.hash; // Format: #token=XYZ&step=1
+            let hash = window.location.hash; // Format: #token=XYZ&step=1 ya #verifyadnabavwji1u198
             const app = document.getElementById('app');
 
-            if (!hash || !hash.includes('token=')) {
-                // 1. HOME / GENERATOR PAGE
-                app.innerHTML = `
-                    <div class="bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800 w-full max-w-md">
-                        <h1 class="text-2xl font-black text-center mb-6 text-indigo-400">AK URL Shortener</h1>
-                        <form id="shorten-form" class="space-y-4">
-                            <input type="url" id="target-url" placeholder="Paste your long URL here..." required class="w-full p-3 rounded-lg bg-slate-800 border border-slate-700 focus:outline-none focus:border-indigo-500 text-white">
-                            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 py-3 rounded-lg font-bold transition shadow-lg">Shorten Link</button>
-                        </form>
-                    </div>
-                `;
+            // Agar hash khali hai ya usme token nahi hai, toh automatic ek naya session bana kar Step 1 par bhej do
+            if (!hash || hash === '#') {
+                const autoToken = Math.random().toString(36).substring(2, 10);
+                localStorage.setItem('ak_url_' + autoToken, DEFAULT_FINAL_URL);
+                localStorage.setItem('continue_clicks', '0');
+                window.location.hash = `token=${autoToken}&step=1`;
+                return;
+            }
 
-                document.getElementById('shorten-form').addEventListener('submit', (e) => {
+            // Agar Telegram se direct token aaya hai (jaise #verifyadnabavwji1u198)
+            if (hash && !hash.includes('token=') && hash.length > 1) {
+                const randomToken = hash.replace('#', '');
+                if (!localStorage.getItem('ak_url_' + randomToken)) {
+                    localStorage.setItem('ak_url_' + randomToken, DEFAULT_FINAL_URL);
+                }
+                localStorage.setItem('continue_clicks', '0');
+                window.location.hash = `token=${randomToken}&step=1`;
+                return;
+            }
+
+            // PARSE HASH & STEPS LOGIC
+            const params = new URLSearchParams(hash.replace('#', ''));
+            const token = params.get('token');
+            let step = parseInt(params.get('step')) || 1;
+
+            const originalUrl = localStorage.getItem('ak_url_' + token) || DEFAULT_FINAL_URL;
+
+            if (step > 4) {
+                // Final Destination Redirect
+                window.location.href = originalUrl;
+                return;
+            }
+
+            let nextStep = step + 1;
+            let nextHash = `#token=${token}&step=${nextStep}`;
+
+            // 2. AD / TIMER STEP PAGES (1 se 4 tak)
+            app.innerHTML = `
+                <div class="bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800 w-full max-w-md text-center">
+                    <h2 class="text-xl font-bold mb-2 text-indigo-400">Processing Verification...</h2>
+                    <p class="text-slate-400 text-sm mb-6">Step <span id="step-num">${step}</span> of 4</p>
+
+                    <div id="timer-box" class="mb-6">
+                        <p class="text-lg font-semibold text-yellow-400">Please wait <span id="countdown">7</span> seconds...</p>
+                        <p class="text-xs text-slate-400 mt-2">💡 <a href="${DIRECT_LINK}" target="_blank" class="text-indigo-400 underline font-medium">Click here if timer is slow</a></p>
+                    </div>
+
+                    <button id="next-btn" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded-lg font-bold transition block shadow-lg cursor-pointer">Get Link / Continue</button>
+                </div>
+            `;
+
+            // Timer Logic
+            let timeLeft = 7;
+            const countdownEl = document.getElementById('countdown');
+            const timerBox = document.getElementById('timer-box');
+            const nextBtn = document.getElementById('next-btn');
+
+            const timer = setInterval(() => {
+                timeLeft--;
+                if (countdownEl) countdownEl.innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    if (timerBox) timerBox.style.display = 'none';
+                    if (nextBtn) nextBtn.classList.remove('hidden');
+                }
+            }, 1000);
+
+            // --- 5 CLICKS DIRECT LINK LOGIC ---
+            if (nextBtn) {
+                nextBtn.addEventListener('click', (e) => {
                     e.preventDefault();
-                    const url = document.getElementById('target-url').value;
-                    const token = Math.random().toString(36).substring(2, 10);
-                    
-                    // Save in browser localStorage
-                    localStorage.setItem('ak_url_' + token, url);
-                    // Reset click count for new session
-                    localStorage.setItem('continue_clicks', '0');
 
-                    // Redirect to Step 1
-                    window.location.hash = `token=${token}&step=1`;
-                });
+                    let clicks = parseInt(localStorage.getItem('continue_clicks') || '0');
+                    clicks++;
 
-            } else {
-                // PARSE HASH
-                const params = new URLSearchParams(hash.replace('#', ''));
-                const token = params.get('token');
-                let step = parseInt(params.get('step')) || 1;
-
-                const originalUrl = localStorage.getItem('ak_url_' + token);
-
-                if (!originalUrl) {
-                    app.innerHTML = `
-                        <div class="bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800 w-full max-w-md text-center">
-                            <h2 class="text-xl font-bold mb-2 text-red-400">Link Expired or Invalid</h2>
-                            <a href="#" class="mt-4 inline-block bg-indigo-600 px-4 py-2 rounded-lg font-semibold">Create New Link</a>
-                        </div>
-                    `;
-                    return;
-                }
-
-                if (step > 4) {
-                    // Final Destination Redirect
-                    window.location.href = originalUrl;
-                    return;
-                }
-
-                let nextStep = step + 1;
-                let nextHash = `#token=${token}&step=${nextStep}`;
-
-                // 2. AD / TIMER STEP PAGES (1 to 4)
-                app.innerHTML = `
-                    <div class="bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800 w-full max-w-md text-center">
-                        <h2 class="text-xl font-bold mb-2 text-indigo-400">Processing Link...</h2>
-                        <p class="text-slate-400 text-sm mb-6">Step <span id="step-num">${step}</span> of 4</p>
-
-                        <div id="timer-box" class="mb-6">
-                            <p class="text-lg font-semibold text-yellow-400">Please wait <span id="countdown">7</span> seconds...</p>
-                            <p class="text-xs text-slate-400 mt-2">💡 <a href="${DIRECT_LINK}" target="_blank" class="text-indigo-400 underline font-medium">Click here if timer is slow</a></p>
-                        </div>
-
-                        <button id="next-btn" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded-lg font-bold transition block shadow-lg cursor-pointer">Get Link / Continue</button>
-                    </div>
-                `;
-
-                // Timer Logic
-                let timeLeft = 7;
-                const countdownEl = document.getElementById('countdown');
-                const timerBox = document.getElementById('timer-box');
-                const nextBtn = document.getElementById('next-btn');
-
-                const timer = setInterval(() => {
-                    timeLeft--;
-                    if (countdownEl) countdownEl.innerText = timeLeft;
-                    if (timeLeft <= 0) {
-                        clearInterval(timer);
-                        if (timerBox) timerBox.style.display = 'none';
-                        if (nextBtn) nextBtn.classList.remove('hidden');
+                    if (clicks < 6) {
+                        localStorage.setItem('continue_clicks', clicks.toString());
+                        window.open(DIRECT_LINK, '_blank');
+                    } else {
+                        localStorage.setItem('continue_clicks', '0');
+                        window.location.hash = `token=${token}&step=${nextStep}`;
                     }
-                }, 1000);
-
-                // --- 5 CLICKS DIRECT LINK LOGIC ---
-                if (nextBtn) {
-                    nextBtn.addEventListener('click', (e) => {
-                        e.preventDefault();
-
-                        // Get current click count
-                        let clicks = parseInt(localStorage.getItem('continue_clicks') || '0');
-                        clicks++;
-
-                        if (clicks < 6) {
-                            // 1 se 5 click tak: Direct link open karo
-                            localStorage.setItem('continue_clicks', clicks.toString());
-                            window.open(DIRECT_LINK, '_blank');
-                        } else {
-                            // 6th click par: Agle page/step par le jao
-                            localStorage.setItem('continue_clicks', '0'); // Counter reset
-                            window.location.hash = nextHash;
-                        }
-                    });
-                }
+                });
             }
         }
 
-        // Listen to hash changes for smooth client-side navigation
         window.addEventListener('hashchange', render);
         window.addEventListener('load', render);
     </script>
