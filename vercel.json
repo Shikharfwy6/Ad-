@@ -9,7 +9,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "destination": "server.js"
+      "destination": "index.js"
     },
     {
       "src": "/(.*)",
