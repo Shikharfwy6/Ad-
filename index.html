@@ -49,30 +49,44 @@
         // Telegram Bot ka base URL jise copy box me banana hai
         const BOT_BASE_URL = "https://t.me/Course_give_bot?start="; 
 
+        // Random Alphanumeric Token Generator Function (jaise aksjjwi, Qoiwueh18)
+        function generateRandomToken(length = 10) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
         // --- ROUTER & APP LOGIC ---
-        function render() {
-            let hash = window.location.hash; // Format: #token=XYZ&step=1 ya #verifyadnabavwji1u198
+        async function render() {
+            let hash = window.location.hash; 
             const app = document.getElementById('app');
 
-            // Agar hash khali hai, toh random token generate karke Step 1 par bhej do
+            // Agar hash khali hai ya sirf '#' hai, toh naya random token generate karo aur MongoDB me save karne ke liye backend ko bhejo
             if (!hash || hash === '#') {
-                const autoToken = "verifyad" + Math.random().toString(36).substring(2, 10);
-                localStorage.setItem('continue_clicks', '0');
-                window.location.hash = `token=${autoToken}&step=1`;
-                return;
-            }
+                const randomStr = generateRandomToken(10); // Jaise aksjjwi ya Qoiwueh18
+                
+                // Backend API par token save karne ki request bhejo
+                try {
+                    await fetch('/api/save-token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ tokan: randomStr })
+                    });
+                } catch (err) {
+                    console.error("Token save karne me error aayi:", err);
+                }
 
-            // Agar Telegram se direct random token aaya hai (jaise #verifyadnabavwji1u198)
-            if (hash && !hash.includes('token=') && hash.length > 1) {
-                const randomToken = hash.replace('#', '');
                 localStorage.setItem('continue_clicks', '0');
-                window.location.hash = `token=${randomToken}&step=1`;
+                window.location.hash = `token=${randomStr}&step=1`;
                 return;
             }
 
             // PARSE HASH & STEPS LOGIC
             const params = new URLSearchParams(hash.replace('#', ''));
-            const token = params.get('token') || "verifyad123";
+            const token = params.get('token') || generateRandomToken(10);
             let step = parseInt(params.get('step')) || 1;
 
             // Final Link generate karo copy box ke liye
@@ -96,7 +110,7 @@
                 document.getElementById('copy-btn').addEventListener('click', () => {
                     const copyInput = document.getElementById('copy-input');
                     copyInput.select();
-                    copyInput.setSelectionRange(0, 99999); // Mobile compatibility ke liye
+                    copyInput.setSelectionRange(0, 99999); 
                     navigator.clipboard.writeText(copyInput.value);
 
                     const btn = document.getElementById('copy-btn');
