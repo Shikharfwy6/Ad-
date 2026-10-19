@@ -16,10 +16,10 @@ async function connectDB() {
     if (isConnected) return;
     if (MONGO_URI) {
         await mongoose.connect(MONGO_URI, {
-            dbName: 'cluster_bot_db2'
+            dbName: 'cluster_bot_dbviral'
         });
         isConnected = true;
-        console.log("MongoDB Connected to cluster_bot_db2");
+        console.log("MongoDB Connected to cluster_bot_dbviral");
     }
 }
 
