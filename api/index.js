@@ -16,7 +16,7 @@ async function connectDB() {
     if (isConnected) return;
     if (MONGO_URI) {
         await mongoose.connect(MONGO_URI, {
-            dbName: 'cluster_bot_dbviral'
+            dbName: 'telegram_bot_dbviral'
         });
         isConnected = true;
         console.log("MongoDB Connected to cluster_bot_dbviral");
